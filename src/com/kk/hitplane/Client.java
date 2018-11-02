@@ -3,26 +3,27 @@ package com.kk.hitplane;
 import java.net.URI;
 
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 
 import com.kk.hitplane.log.Level;
 import com.kk.hitplane.log.Logger;
 import com.kk.hitplane.request.Login;
-import com.kk.hitplane.util.ThreadUtil;
 
 public class Client extends WebSocketClient {
-	public static final String URL = "ws://111.231.232.54:10001/hitplane";
-
 	private static Client sClient;
+	
+	public static String url;
 
 	public static synchronized Client getInstance() {
-		if (sClient == null) {
+		if (sClient == null || !sClient.isOpen()) {
 			try {
-				URI uri = new URI(URL);
+				URI uri = new URI(url);
 				sClient = new Client(uri);
+				sClient.connect();
 			} catch (Exception e) {
 				Logger.getInstance().print(null, Level.E, e);
+
+				sClient = null;
 			}
 		}
 
@@ -30,7 +31,7 @@ public class Client extends WebSocketClient {
 	}
 
 	private Client(URI uri) {
-		super(uri, new Draft_6455());
+		super(uri);
 	}
 
 	@Override
@@ -50,10 +51,6 @@ public class Client extends WebSocketClient {
 	@Override
 	public void onClose(int code, String reason, boolean remote) {
 		Logger.getInstance().print(null, Level.I, "onClose", code, reason, remote);
-
-		ThreadUtil.run(() -> {
-			getInstance().connect();
-		}, 5000);
 	}
 
 	@Override
